@@ -1,0 +1,66 @@
+name: Build APK with engine
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  # Крок 1: збираємо повний емулятор QEMU (qemu-system-aarch64)
+  # на безкоштовному ARM-сервері GitHub. Репозиторій має бути публічним.
+  engine:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Зібрати QEMU (x86) у контейнері Alpine
+        run: |
+          mkdir -p out
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD/qemu-build:/build:ro" -v "$PWD/out:/out" \
+            alpine:3.20 sh /build/build-system.sh
+
+      - name: Перевірити результат
+        run: ls -l out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine
+          path: out/
+
+  # Крок 2: збираємо застосунок і кладемо рушій усередину APK.
+  apk:
+    needs: engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine
+          path: engine
+
+      - name: Покласти рушій у застосунок
+        run: |
+          mkdir -p app/src/main/jniLibs/arm64-v8a
+          cp engine/qemu-system-i386 app/src/main/jniLibs/arm64-v8a/libqemu.so
+          chmod 755 app/src/main/jniLibs/arm64-v8a/libqemu.so
+          mkdir -p app/src/main/assets
+          cp -r engine/pc-bios app/src/main/assets/pc-bios
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+
+      - name: Зібрати APK
+        run: gradle assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
