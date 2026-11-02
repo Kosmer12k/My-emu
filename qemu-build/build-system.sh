@@ -7,9 +7,14 @@ VER=8.2.4
 
 apk add --no-cache build-base python3 py3-setuptools ninja pkgconf bash curl xz \
   flex bison perl linux-headers \
-  glib-dev glib-static pcre2-dev pcre2-static libffi-dev \
+  glib-dev glib-static pcre2-dev libffi-dev \
   pixman-dev pixman-static zlib-dev zlib-static \
   gettext-dev gettext-static
+
+# Ці статичні пакети є не у всіх версіях Alpine, тому помилки тут не страшні
+apk add --no-cache pcre2-static || true
+apk add --no-cache libffi-static || true
+apk add --no-cache util-linux-static || true
 
 cd /tmp
 curl -fsSLO "https://download.qemu.org/qemu-$VER.tar.xz"
