@@ -1,14 +1,17 @@
 #!/bin/bash
 set -e
 
-# Обновляем репозитории и устанавливаем необходимые зависимости для Meson/QEMU в Alpine
-echo "==> Установка зависимостей сборки в Alpine..."
-apk update
-apk add --no-cache git dtc bash python3 py3-pip meson ninja gcc g++ make glib-dev pixman-dev linux-headers
+echo "==> Запуск конфигурации и сборки QEMU..."
 
-# Переходим к конфигурации и сборке
-echo "==> Запуск конфигурации QEMU..."
+# Создаем директорию для сборки, если её нет, и переходим в неё
+mkdir -p build
+cd build
 
-# Сюда автоматически подставятся ваши оригинальные команды конфигурации, например:
-# ./configure --target-list=i386-softmmu ...
-# make -j$(nproc)
+# Конфигурация проекта с помощью Meson (базовый вариант для компиляции)
+# Если у вас есть специфичные флаги Claude, замените эту строку на них
+../configure --target-list=i386-softmmu --disable-werror
+
+# Запуск компиляции
+make -j$(nproc)
+
+echo "==> Сборка QEMU завершена успешно!"
