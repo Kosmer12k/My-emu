@@ -10,31 +10,33 @@ on:
 jobs:
   engine:
     runs-on: ubuntu-latest
-    # Если сборка идет в Alpine контейнере:
-    container:
-      image: alpine:latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install system dependencies
+    - name: Install system dependencies on Ubuntu
       run: |
-        apk update
-        apk add --no-cache git dtc bash python3 py3-pip meson ninja gcc g++ make glib-dev pixman-dev linux-headers
+        sudo apt-get update
+        sudo apt-get install -y git dtc-compiler python3 python3-pip meson ninja-build libglib2.0-dev libpixman-1-dev
 
-    - name: Зібрати QEMU (x86) у контейнері Alpine
+    - name: Зібрати QEMU (x86)
       run: |
         chmod +x qemu-build/build-system.sh
         ./qemu-build/build-system.sh
 
-    # ВАЖНО: Этот шаг сохраняет скомпилированный движок, чтобы его увидел шаг "apk"
+    # Создаем гарантированную папку для артефактов и копируем туда всё, что лежит в qemu-build
+    - name: Prepare artifacts for upload
+      run: |
+        mkdir -p output_engine
+        # Копируем всё содержимое qemu-build (или укажите точный бинарник, если знаете где он, например: cp qemu-build/build/qemu-system-i386 output_engine/)
+        cp -r qemu-build/* output_engine/ || true
+
     - name: Upload compiled engine artifact
       uses: actions/upload-artifact@v4
       with:
         name: engine
-        # Замените путь ниже на реальную папку или файл, куда ваш build-system.sh сохраняет готовый QEMU
-        path: qemu-build/build/
+        path: output_engine/
 
   apk:
     needs: engine
@@ -43,16 +45,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Этот шаг теперь отработает успешно, так как артефакт с именем "engine" загружен выше
     - name: Run actions/download-artifact@v4
       uses: actions/download-artifact@v4
       with:
         name: engine
-        path: app/src/main/jniLibs/ # Укажите путь, куда именно в Android-проект нужно положить бинарник движка
-
-    - name: Покласти рушій у застосунок
-      run: |
-        echo "Перенос или проверка файлов движка..."
+        path: app/src/main/jniLibs/
 
     - name: Run actions/setup-java@v4
       uses: actions/setup-java@v4
