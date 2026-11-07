@@ -18,18 +18,16 @@ jobs:
     - name: Install system dependencies on Ubuntu
       run: |
         sudo apt-get update
-        sudo apt-get install -y git dtc-compiler python3 python3-pip meson ninja-build libglib2.0-dev libpixman-1-dev
+        sudo apt-get install -y git device-tree-compiler python3 python3-pip meson ninja-build libglib2.0-dev libpixman-1-dev
 
     - name: Зібрати QEMU (x86)
       run: |
         chmod +x qemu-build/build-system.sh
         ./qemu-build/build-system.sh
 
-    # Создаем гарантированную папку для артефактов и копируем туда всё, что лежит в qemu-build
     - name: Prepare artifacts for upload
       run: |
         mkdir -p output_engine
-        # Копируем всё содержимое qemu-build (или укажите точный бинарник, если знаете где он, например: cp qemu-build/build/qemu-system-i386 output_engine/)
         cp -r qemu-build/* output_engine/ || true
 
     - name: Upload compiled engine artifact
