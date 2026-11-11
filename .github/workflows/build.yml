@@ -18,7 +18,7 @@ jobs:
 
       - name: Download QEMU source
         run: |
-          git clone --depth 1 --branch v9.1.0 https://gitlab.com qemu-src
+          git clone --depth 1 --branch v9.1.0 https://github.com qemu-src
           cp -rn qemu-src/* .
           rm -rf qemu-src
 
